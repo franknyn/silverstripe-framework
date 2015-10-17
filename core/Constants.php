@@ -94,7 +94,10 @@ function stripslashes_recursively(&$array) {
 if(!defined('TRUSTED_PROXY')) {
 	$trusted = true; // will be false by default in a future release
 
-	if(getenv('BlockUntrustedIPs') || defined('SS_TRUSTED_PROXY_IPS')) {
+	if(getenv('BlockUntrustedProxyHeaders') // Legacy setting (reverted from documentation)
+		|| getenv('BlockUntrustedIPs') // Documented setting
+		|| defined('SS_TRUSTED_PROXY_IPS')
+	) {
 		$trusted = false;
 
 		if(defined('SS_TRUSTED_PROXY_IPS') && SS_TRUSTED_PROXY_IPS !== 'none') {
@@ -181,9 +184,10 @@ if(!isset($_SERVER['HTTP_HOST'])) {
 	}
 }
 
-if (defined('SS_ALLOWED_HOSTS')) {
+// Filter by configured allowed hosts
+if (defined('SS_ALLOWED_HOSTS') && php_sapi_name() !== "cli") {
 	$all_allowed_hosts = explode(',', SS_ALLOWED_HOSTS);
-	if (!in_array($_SERVER['HTTP_HOST'], $all_allowed_hosts)) {
+	if (!isset($_SERVER['HTTP_HOST']) || !in_array($_SERVER['HTTP_HOST'], $all_allowed_hosts)) {
 		header('HTTP/1.1 400 Invalid Host', true, 400);
 		die();
 	}
